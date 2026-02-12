@@ -57,6 +57,8 @@ const gameRoundEntryBlock = document.getElementById('gameRoundEntryBlock');
 const nextRoundBtn = document.getElementById('nextRoundBtn');
 const finalStandingsList = document.getElementById('finalStandingsList');
 const finalStandingsRestartBtn = document.getElementById('finalStandingsRestartBtn');
+const betPlacedCountEl = document.getElementById('betPlacedCount');
+const betPlacedTotalEl = document.getElementById('betPlacedTotal');
 const errorModal = document.getElementById('errorModal');
 const errorMessage = document.getElementById('errorMessage');
 
@@ -475,15 +477,35 @@ function updateBetForm() {
         return;
     }
     
-    gameState.players.forEach((player, index) => {
+    const totalTricks = gameState.currentRoundState.totalTricks;
+    if (betPlacedTotalEl) betPlacedTotalEl.textContent = totalTricks;
+    
+    gameState.players.forEach((player) => {
         const betRow = document.createElement('div');
         betRow.className = 'bet-input-row';
         betRow.innerHTML = `
             <div class="player-name">${player.name}</div>
-            <input type="number" class="tricks-bet" placeholder="Bet" min="0" max="${gameState.currentRoundState.totalTricks}">
+            <input type="number" class="tricks-bet" placeholder="Bet" min="0" max="${totalTricks}" value="0">
         `;
+        const input = betRow.querySelector('.tricks-bet');
+        input.addEventListener('input', updateBetsPlacedRatio);
+        input.addEventListener('change', updateBetsPlacedRatio);
         betInputForm.appendChild(betRow);
     });
+    
+    updateBetsPlacedRatio();
+}
+
+// Live count of how many bets have been entered (for ratio display)
+function updateBetsPlacedRatio() {
+    if (!betPlacedCountEl) return;
+    const inputs = document.querySelectorAll('.tricks-bet');
+    let placed = 0;
+    inputs.forEach((input) => {
+        const v = input.value.trim();
+        if (v !== '' && !isNaN(Number(v))) placed++;
+    });
+    betPlacedCountEl.textContent = placed;
 }
 
 // Update trick form
