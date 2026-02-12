@@ -622,6 +622,84 @@ body {
     margin-bottom: 0;
 }
 
+/* Final Standings */
+.final-standings-card {
+    max-width: 560px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+}
+
+.final-standings-title {
+    font-size: 2rem;
+    margin-bottom: 8px;
+    color: #2d3748;
+}
+
+.final-standings-subtitle {
+    font-size: 1.1rem;
+    color: #4a5568;
+    margin-bottom: 24px;
+}
+
+.final-standings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 28px;
+    text-align: left;
+}
+
+.final-standing-row {
+    display: grid;
+    grid-template-columns: 64px 1fr 100px;
+    align-items: center;
+    padding: 14px 20px;
+    background: #f7fafc;
+    border-radius: 12px;
+    border-left: 4px solid #667eea;
+    font-size: 1.05rem;
+}
+
+.final-standing-rank-1 {
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+    border-left-color: #d69e2e;
+}
+
+.final-standing-rank-2 {
+    background: linear-gradient(135deg, #c0c0c0 0%, #e2e8f0 100%);
+    border-left-color: #718096;
+}
+
+.final-standing-rank-3 {
+    background: linear-gradient(135deg, #cd7f32 0%, #ed8936 100%);
+    border-left-color: #dd6b20;
+}
+
+.final-standing-medal {
+    font-weight: 700;
+    color: #2d3748;
+}
+
+.final-standing-name {
+    font-weight: 500;
+    color: #2d3748;
+}
+
+.final-standing-score {
+    font-weight: 600;
+    color: #2d3748;
+    text-align: right;
+}
+
+.final-standings-actions {
+    margin-top: 8px;
+}
+
+.btn-restart {
+    min-width: 180px;
+}
+
 /* Game History */
 .game-history {
     background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);

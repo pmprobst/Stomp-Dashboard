@@ -55,6 +55,8 @@ const gameHistoryContainer = document.getElementById('gameHistory');
 const gameScoreboardBlock = document.getElementById('gameScoreboardBlock');
 const gameRoundEntryBlock = document.getElementById('gameRoundEntryBlock');
 const nextRoundBtn = document.getElementById('nextRoundBtn');
+const finalStandingsList = document.getElementById('finalStandingsList');
+const finalStandingsRestartBtn = document.getElementById('finalStandingsRestartBtn');
 const errorModal = document.getElementById('errorModal');
 const errorMessage = document.getElementById('errorMessage');
 
@@ -90,6 +92,7 @@ submitTrickWinnerBtn.addEventListener('click', submitTrickWinner);
 undoLastTrickBtn.addEventListener('click', undoLastTrick);
 if (undoLastBtnNav) undoLastBtnNav.addEventListener('click', undoLastAction);
 if (restartGameBtn) restartGameBtn.addEventListener('click', newGame);
+if (finalStandingsRestartBtn) finalStandingsRestartBtn.addEventListener('click', newGame);
 updateThresholdsBtn.addEventListener('click', updateThresholds);
 nextRoundBtn.addEventListener('click', showNextRound);
 
@@ -133,13 +136,8 @@ socket.on('roundCompleted', () => {
 });
 
 socket.on('gameCompleted', () => {
-    showingScoreboardAfterRound = true;
-    if (document.querySelector('.page.active').id === 'game') {
-        nextRoundButtonRow.style.display = 'block';
-        gameScoreboardBlock.style.display = 'block';
-        gameRoundEntryBlock.style.display = 'none';
-        updateScoreboard();
-    }
+    // Last round just finished – go to final standings (handled in updateUI when gameState arrives)
+    showingScoreboardAfterRound = false;
 });
 
 // Initialize the app
@@ -182,7 +180,31 @@ function updatePageContent(pageId) {
         case 'history':
             updateGameHistory();
             break;
+        case 'finalStandings':
+            updateFinalStandings();
+            break;
     }
+}
+
+// Populate final standings page (when game is complete)
+function updateFinalStandings() {
+    if (!finalStandingsList) return;
+    if (!gameState.players || gameState.players.length === 0) {
+        finalStandingsList.innerHTML = '<p>No results.</p>';
+        return;
+    }
+    const sorted = [...gameState.players].sort((a, b) => b.score - a.score);
+    finalStandingsList.innerHTML = sorted.map((player, index) => {
+        const rank = index + 1;
+        const medal = rank === 1 ? '1st' : rank === 2 ? '2nd' : rank === 3 ? '3rd' : `${rank}th`;
+        return `
+            <div class="final-standing-row final-standing-rank-${rank}">
+                <span class="final-standing-medal">${medal}</span>
+                <span class="final-standing-name">${player.name}</span>
+                <span class="final-standing-score">${player.score} pts</span>
+            </div>
+        `;
+    }).join('');
 }
 
 // Update thresholds
@@ -375,13 +397,22 @@ function updateUI() {
             }
         }
     } else {
-        navButtons.forEach(btn => {
-            btn.disabled = true;
-            btn.style.opacity = '0.5';
-        });
         showingScoreboardAfterRound = false;
-        if (document.querySelector('.page.active').id !== 'setup') {
-            navigateToPage('setup');
+        if (gameState.gameCompleted && gameState.players && gameState.players.length > 0) {
+            navButtons.forEach(btn => {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            });
+            navigateToPage('finalStandings');
+            updateFinalStandings();
+        } else {
+            navButtons.forEach(btn => {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+            });
+            if (document.querySelector('.page.active').id !== 'setup') {
+                navigateToPage('setup');
+            }
         }
     }
 }
