@@ -59,6 +59,8 @@ const finalStandingsList = document.getElementById('finalStandingsList');
 const finalStandingsRestartBtn = document.getElementById('finalStandingsRestartBtn');
 const betPlacedCountEl = document.getElementById('betPlacedCount');
 const betPlacedTotalEl = document.getElementById('betPlacedTotal');
+const historyOverlay = document.getElementById('historyOverlay');
+const gameHistoryBtn = document.getElementById('gameHistoryBtn');
 const errorModal = document.getElementById('errorModal');
 const errorMessage = document.getElementById('errorMessage');
 
@@ -91,16 +93,39 @@ submitBetsBtn.addEventListener('click', submitBets);
 if (undoLastBtnNav) undoLastBtnNav.addEventListener('click', undoLastAction);
 if (restartGameBtn) restartGameBtn.addEventListener('click', newGame);
 if (finalStandingsRestartBtn) finalStandingsRestartBtn.addEventListener('click', newGame);
+if (gameHistoryBtn) gameHistoryBtn.addEventListener('click', toggleGameHistory);
+document.querySelector('.history-overlay-close')?.addEventListener('click', closeGameHistory);
+if (historyOverlay) historyOverlay.addEventListener('click', (e) => { if (e.target === historyOverlay) closeGameHistory(); });
 updateThresholdsBtn.addEventListener('click', updateThresholds);
 nextRoundBtn.addEventListener('click', showNextRound);
 
-// Navigation: only Restart Game and Game History have data-page; Undo Last Round is action-only
+// Navigation: Restart Game has data-page="setup"; Game History toggles overlay; Undo is action-only
 navButtons.forEach(btn => {
     btn.addEventListener('click', () => {
         const targetPage = btn.getAttribute('data-page');
         if (targetPage) navigateToPage(targetPage);
     });
 });
+
+function toggleGameHistory() {
+    if (!historyOverlay) return;
+    const isOpen = historyOverlay.classList.contains('open');
+    if (isOpen) {
+        closeGameHistory();
+    } else {
+        historyOverlay.classList.add('open');
+        historyOverlay.setAttribute('aria-hidden', 'false');
+        updateGameHistory();
+        if (gameHistoryBtn) gameHistoryBtn.classList.add('active');
+    }
+}
+
+function closeGameHistory() {
+    if (!historyOverlay) return;
+    historyOverlay.classList.remove('open');
+    historyOverlay.setAttribute('aria-hidden', 'true');
+    if (gameHistoryBtn) gameHistoryBtn.classList.remove('active');
+}
 
 // Modal close functionality
 document.querySelector('.close').addEventListener('click', () => {
@@ -174,9 +199,6 @@ function updatePageContent(pageId) {
                 updateRoundManagement();
                 updateRoundSummary();
             }
-            break;
-        case 'history':
-            updateGameHistory();
             break;
         case 'finalStandings':
             updateFinalStandings();

@@ -26,7 +26,7 @@
                     <span class="icon-wrap"><svg class="icon icon-undo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h10a5 5 0 0 1 5 5v0"/><path d="M3 10l4-4"/><path d="M3 10l4 4"/></svg></span>
                     <span>Undo Last Round</span>
                 </button>
-                <button class="nav-btn" data-page="history">Game History</button>
+                <button class="nav-btn" id="gameHistoryBtn" title="Toggle Game History">Game History</button>
             </div>
         </nav>
 
@@ -165,13 +165,16 @@
             </div>
         </section>
 
-        <!-- Game History Page -->
-        <section id="history" class="page">
-            <div class="card game-history">
-                <h3>Game History</h3>
+        <!-- Game History (toggleable overlay) -->
+        <div id="historyOverlay" class="history-overlay" aria-hidden="true">
+            <div class="history-overlay-panel">
+                <div class="history-overlay-header">
+                    <h3>Game History</h3>
+                    <button type="button" class="history-overlay-close" title="Close" aria-label="Close">&times;</button>
+                </div>
                 <div id="gameHistory" class="history-content"></div>
             </div>
-        </section>
+        </div>
 
         <!-- Final Standings Page (shown when last round is complete) -->
         <section id="finalStandings" class="page">
