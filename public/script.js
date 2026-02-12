@@ -492,7 +492,7 @@ function updateBetForm() {
         betRow.className = 'bet-input-row';
         betRow.innerHTML = `
             <div class="player-name">${player.name}</div>
-            <input type="number" class="tricks-bet" placeholder="Bet" min="0" max="${totalTricks}" value="0">
+            <input type="number" class="tricks-bet" placeholder="Bet" min="0" step="1" value="0" data-max="${totalTricks}" title="0–${totalTricks} tricks this round">
         `;
         const input = betRow.querySelector('.tricks-bet');
         input.addEventListener('input', updateBetsPlacedRatio);
