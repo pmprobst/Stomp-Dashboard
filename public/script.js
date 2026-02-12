@@ -77,7 +77,6 @@ const currentTrickSpan = document.getElementById('currentTrick');
 const totalTricksSpan = document.getElementById('totalTricks');
 const trickProgressFill = document.getElementById('trickProgressFill');
 const trickWinnerButtonsContainer = document.getElementById('trickWinnerButtons');
-const undoLastTrickBtn = document.getElementById('undoLastTrick');
 const trickHistoryContainer = document.getElementById('trickHistory');
 
 // Navigation elements
@@ -89,7 +88,6 @@ const undoLastBtnNav = document.getElementById('undoLastBtn');
 playerCountInput.addEventListener('change', generatePlayerNameInputs);
 startGameBtn.addEventListener('click', startGame);
 submitBetsBtn.addEventListener('click', submitBets);
-undoLastTrickBtn.addEventListener('click', undoLastTrick);
 if (undoLastBtnNav) undoLastBtnNav.addEventListener('click', undoLastAction);
 if (restartGameBtn) restartGameBtn.addEventListener('click', newGame);
 if (finalStandingsRestartBtn) finalStandingsRestartBtn.addEventListener('click', newGame);
@@ -235,23 +233,17 @@ function updateThresholds() {
     updateScoreboard();
 }
 
-// Generate player name input fields (in horseshoe: left column then right column)
+// Generate player name input fields (list)
 function generatePlayerNameInputs() {
     const playerCount = parseInt(playerCountInput.value);
-    const left = playerNamesContainer.querySelector('.horseshoe-left');
-    const right = playerNamesContainer.querySelector('.horseshoe-right');
-    if (!left || !right) return;
-    left.innerHTML = '';
-    right.innerHTML = '';
-    const half = Math.ceil(playerCount / 2);
+    playerNamesContainer.innerHTML = '';
     for (let i = 0; i < playerCount; i++) {
         const input = document.createElement('input');
         input.type = 'text';
         input.placeholder = `Player ${i + 1} Name`;
         input.required = true;
         input.className = 'player-name-input';
-        if (i < half) left.appendChild(input);
-        else right.appendChild(input);
+        playerNamesContainer.appendChild(input);
     }
 }
 
@@ -461,26 +453,16 @@ function updateRoundManagement() {
     }
 }
 
-// Update bet form (horseshoe: left column then right column)
+// Update bet form (list)
 function updateBetForm() {
-    const left = betInputForm.querySelector('.horseshoe-left');
-    const right = betInputForm.querySelector('.horseshoe-right');
-    if (!left || !right) return;
-    left.innerHTML = '';
-    right.innerHTML = '';
-    
+    betInputForm.innerHTML = '';
     if (!gameState.players || gameState.players.length === 0) {
-        const msg = document.createElement('p');
-        msg.textContent = 'No players found. Please start a game first.';
-        left.appendChild(msg);
+        betInputForm.innerHTML = '<p>No players found. Please start a game first.</p>';
         return;
     }
-    
     const totalTricks = gameState.currentRoundState.totalTricks;
     if (betPlacedTotalEl) betPlacedTotalEl.textContent = totalTricks;
-    const half = Math.ceil(gameState.players.length / 2);
-    
-    gameState.players.forEach((player, index) => {
+    gameState.players.forEach((player) => {
         const betRow = document.createElement('div');
         betRow.className = 'bet-input-row';
         betRow.innerHTML = `
@@ -490,76 +472,88 @@ function updateBetForm() {
         const input = betRow.querySelector('.tricks-bet');
         input.addEventListener('input', updateBetsPlacedRatio);
         input.addEventListener('change', updateBetsPlacedRatio);
-        if (index < half) left.appendChild(betRow);
-        else right.appendChild(betRow);
+        betInputForm.appendChild(betRow);
     });
-    
     updateBetsPlacedRatio();
 }
 
-// Live count of how many bets have been entered (for ratio display)
+// Sum of all bet values (for ratio display: sum of bets / tricks in round)
 function updateBetsPlacedRatio() {
     if (!betPlacedCountEl) return;
     const inputs = document.querySelectorAll('.tricks-bet');
-    let placed = 0;
+    let sum = 0;
     inputs.forEach((input) => {
-        const v = input.value.trim();
-        if (v !== '' && !isNaN(Number(v))) placed++;
+        const n = parseInt(input.value.trim(), 10);
+        if (!isNaN(n) && n >= 0) sum += n;
     });
-    betPlacedCountEl.textContent = placed;
+    betPlacedCountEl.textContent = sum;
 }
 
-// Update trick form: player buttons with wins/bet ratio (horseshoe layout)
+// Update trick form: player buttons with wins/bet ratio (list), space between name and ratio
 function updateTrickForm() {
     if (!trickWinnerButtonsContainer) return;
     trickWinnerButtonsContainer.innerHTML = '';
-    
     const bets = gameState.currentRoundState.bets || [];
     const trickWinners = gameState.currentRoundState.trickWinners || [];
-    
-    const half = Math.ceil(gameState.players.length / 2);
-    const leftCol = document.createElement('div');
-    leftCol.className = 'horseshoe-left';
-    const rightCol = document.createElement('div');
-    rightCol.className = 'horseshoe-right';
-    
     gameState.players.forEach((player, index) => {
         const wins = trickWinners.filter(id => id === player.id).length;
         const bet = (bets[index] && typeof bets[index].tricksBet === 'number') ? bets[index].tricksBet : 0;
         const ratioText = `${wins}/${bet}`;
-        
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'btn trick-winner-btn';
-        btn.dataset.playerId = player.id;
-        btn.innerHTML = `<span class="trick-winner-name">${player.name}</span><span class="trick-winner-ratio">${ratioText}</span>`;
+        btn.innerHTML = `<span class="trick-winner-name">${player.name}</span> <span class="trick-winner-ratio">${ratioText}</span>`;
         btn.addEventListener('click', () => submitTrickWinner(player.id));
-        
-        if (index < half) leftCol.appendChild(btn);
-        else rightCol.appendChild(btn);
+        trickWinnerButtonsContainer.appendChild(btn);
     });
-    
-    trickWinnerButtonsContainer.appendChild(leftCol);
-    trickWinnerButtonsContainer.appendChild(rightCol);
 }
 
-// Update trick history
+// Update trick history: each row has trick number, winner (name or dropdown when editing), edit icon
 function updateTrickHistory() {
     trickHistoryContainer.innerHTML = '';
-    
-    if (gameState.currentRoundState.trickWinners.length === 0) {
+    const trickWinners = gameState.currentRoundState.trickWinners || [];
+    if (trickWinners.length === 0) {
         trickHistoryContainer.innerHTML = '<p>No tricks played yet.</p>';
         return;
     }
-    
-    gameState.currentRoundState.trickWinners.forEach((winnerId, index) => {
+    trickWinners.forEach((winnerId, trickIndex) => {
         const player = gameState.players.find(p => p.id === winnerId);
         const trickItem = document.createElement('div');
-        trickItem.className = 'trick-history-item';
+        trickItem.className = 'trick-history-item trick-history-row';
+        trickItem.dataset.trickIndex = trickIndex;
         trickItem.innerHTML = `
-            <div class="trick-number">Trick ${index + 1}</div>
-            <div class="trick-winner">${player.name}</div>
+            <div class="trick-number">Trick ${trickIndex + 1}</div>
+            <div class="trick-winner-cell">
+                <span class="trick-winner-display">${player ? player.name : '?'}</span>
+                <select class="trick-winner-edit-select" style="display: none;">
+                    ${gameState.players.map(p => `<option value="${p.id}" ${p.id === winnerId ? 'selected' : ''}>${p.name}</option>`).join('')}
+                </select>
+            </div>
+            <button type="button" class="trick-history-edit-btn" title="Edit winner" aria-label="Edit winner">
+                <svg class="icon icon-pencil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
         `;
+        const displayEl = trickItem.querySelector('.trick-winner-display');
+        const selectEl = trickItem.querySelector('.trick-winner-edit-select');
+        const editBtn = trickItem.querySelector('.trick-history-edit-btn');
+        editBtn.addEventListener('click', () => {
+            displayEl.style.display = 'none';
+            selectEl.style.display = 'inline-block';
+            editBtn.style.display = 'none';
+            selectEl.focus();
+        });
+        selectEl.addEventListener('change', () => {
+            const newPlayerId = parseInt(selectEl.value, 10);
+            socket.emit('editTrickWinner', { trickIndex, playerId: newPlayerId });
+            displayEl.style.display = '';
+            selectEl.style.display = 'none';
+            editBtn.style.display = '';
+        });
+        selectEl.addEventListener('blur', () => {
+            displayEl.style.display = '';
+            selectEl.style.display = 'none';
+            editBtn.style.display = '';
+        });
         trickHistoryContainer.appendChild(trickItem);
     });
 }

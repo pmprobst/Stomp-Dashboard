@@ -129,9 +129,20 @@ io.on('connection', (socket) => {
       gameState.currentRoundState.trickWinners.pop();
       gameState.currentRoundState.tricksPlayed--;
       
-      // Broadcast updated state to all clients
       io.emit('gameState', gameState);
     }
+  });
+
+  // Handle edit trick winner (change who won a specific trick)
+  socket.on('editTrickWinner', (data) => {
+    const { trickIndex, playerId } = data;
+    if (gameState.currentRoundState.phase !== 'tricks') return;
+    const winners = gameState.currentRoundState.trickWinners;
+    if (trickIndex < 0 || trickIndex >= winners.length) return;
+    const player = gameState.players.find(p => p.id === playerId);
+    if (!player) return;
+    winners[trickIndex] = playerId;
+    io.emit('gameState', gameState);
   });
   
   // Handle undo last action (complete round)
