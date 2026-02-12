@@ -78,11 +78,10 @@
                     <div id="roundProgress" class="progress-fill"></div>
                 </div>
             </div>
-            <div class="card quick-actions">
-                <div class="action-buttons">
-                    <button id="newGame" class="btn btn-secondary">Restart Game</button>
-                    <button id="undoLast" class="btn btn-warning">Undo Last Round</button>
-                </div>
+
+            <!-- Next Round button (shown only when scoreboard is visible) -->
+            <div id="nextRoundButtonRow" class="next-round-row" style="display: none;">
+                <button id="nextRoundBtn" class="btn btn-success btn-next-round">Next Round</button>
             </div>
 
             <!-- Scoreboard block (shown after each round) -->
@@ -115,9 +114,6 @@
                     <div class="full-rankings">
                         <h4>Full Rankings</h4>
                         <div id="fullRankings" class="rankings-table"></div>
-                    </div>
-                    <div class="round-actions" style="margin-top: 16px;">
-                        <button id="nextRoundBtn" class="btn btn-success">Next Round</button>
                     </div>
                 </div>
             </div>

@@ -48,8 +48,8 @@ const fullRankingsContainer = document.getElementById('fullRankings');
 const betInputForm = document.getElementById('betInputForm');
 const roundInputNumber = document.getElementById('roundInputNumber');
 const submitBetsBtn = document.getElementById('submitBets');
-const undoLastBtn = document.getElementById('undoLast');
-const newGameBtn = document.getElementById('newGame');
+const restartGameBtn = document.getElementById('restartGameBtn');
+const nextRoundButtonRow = document.getElementById('nextRoundButtonRow');
 const roundSummaryContainer = document.getElementById('roundSummary');
 const gameHistoryContainer = document.getElementById('gameHistory');
 const gameScoreboardBlock = document.getElementById('gameScoreboardBlock');
@@ -88,9 +88,8 @@ startGameBtn.addEventListener('click', startGame);
 submitBetsBtn.addEventListener('click', submitBets);
 submitTrickWinnerBtn.addEventListener('click', submitTrickWinner);
 undoLastTrickBtn.addEventListener('click', undoLastTrick);
-undoLastBtn.addEventListener('click', undoLastAction);
 if (undoLastBtnNav) undoLastBtnNav.addEventListener('click', undoLastAction);
-newGameBtn.addEventListener('click', newGame);
+if (restartGameBtn) restartGameBtn.addEventListener('click', newGame);
 updateThresholdsBtn.addEventListener('click', updateThresholds);
 nextRoundBtn.addEventListener('click', showNextRound);
 
@@ -126,6 +125,7 @@ socket.on('validationError', (message) => {
 socket.on('roundCompleted', () => {
     showingScoreboardAfterRound = true;
     if (document.querySelector('.page.active').id === 'game') {
+        nextRoundButtonRow.style.display = 'block';
         gameScoreboardBlock.style.display = 'block';
         gameRoundEntryBlock.style.display = 'none';
         updateScoreboard();
@@ -135,6 +135,7 @@ socket.on('roundCompleted', () => {
 socket.on('gameCompleted', () => {
     showingScoreboardAfterRound = true;
     if (document.querySelector('.page.active').id === 'game') {
+        nextRoundButtonRow.style.display = 'block';
         gameScoreboardBlock.style.display = 'block';
         gameRoundEntryBlock.style.display = 'none';
         updateScoreboard();
@@ -336,6 +337,7 @@ function newGame() {
 // Switch from scoreboard view back to round entry (Next Round)
 function showNextRound() {
     showingScoreboardAfterRound = false;
+    nextRoundButtonRow.style.display = 'none';
     gameScoreboardBlock.style.display = 'none';
     gameRoundEntryBlock.style.display = 'block';
     updateRoundManagement();
@@ -352,6 +354,7 @@ function updateUI() {
         if (document.querySelector('.page.active').id === 'setup') {
             showingScoreboardAfterRound = false;
             navigateToPage('game');
+            if (nextRoundButtonRow) nextRoundButtonRow.style.display = 'none';
             gameScoreboardBlock.style.display = 'none';
             gameRoundEntryBlock.style.display = 'block';
         }
@@ -362,9 +365,11 @@ function updateUI() {
         updateGameHistory();
         if (document.querySelector('.page.active').id === 'game') {
             if (showingScoreboardAfterRound) {
+                nextRoundButtonRow.style.display = 'block';
                 gameScoreboardBlock.style.display = 'block';
                 gameRoundEntryBlock.style.display = 'none';
             } else {
+                nextRoundButtonRow.style.display = 'none';
                 gameScoreboardBlock.style.display = 'none';
                 gameRoundEntryBlock.style.display = 'block';
             }

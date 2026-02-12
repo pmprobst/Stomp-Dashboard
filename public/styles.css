@@ -599,6 +599,20 @@ body {
     border-bottom: none;
 }
 
+/* Next Round button row: below round progress, above scoreboard */
+.next-round-row {
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+.btn-next-round {
+    width: 100%;
+    padding: 12px 24px;
+    font-size: 16px;
+    margin: 0;
+    border-radius: 8px;
+}
+
 /* Game page: scoreboard and round-entry blocks (visibility toggled in JS) */
 .game-block {
     margin-bottom: 20px;
