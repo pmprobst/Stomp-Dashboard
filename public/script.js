@@ -233,8 +233,10 @@ function updateThresholds() {
     updateScoreboard();
 }
 
-// Generate player name input fields (list)
+// Generate player name input fields (list); preserve existing names when count changes
 function generatePlayerNameInputs() {
+    const existingInputs = playerNamesContainer.querySelectorAll('.player-name-input');
+    const savedNames = Array.from(existingInputs).map(input => input.value.trim());
     const playerCount = parseInt(playerCountInput.value);
     playerNamesContainer.innerHTML = '';
     for (let i = 0; i < playerCount; i++) {
@@ -243,6 +245,7 @@ function generatePlayerNameInputs() {
         input.placeholder = `Player ${i + 1} Name`;
         input.required = true;
         input.className = 'player-name-input';
+        if (savedNames[i]) input.value = savedNames[i];
         playerNamesContainer.appendChild(input);
     }
 }
