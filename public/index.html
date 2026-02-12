@@ -6,24 +6,20 @@
     <title>Stomp Dashboard</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
     <div class="container">
         <header class="header">
-            <h1>🎴 Stomp Dashboard</h1>
+            <h1>Stomp Dashboard</h1>
             <p class="subtitle">Card Game Score Tracker</p>
         </header>
 
-        <!-- Navigation -->
+        <!-- Navigation: Restart Game | Undo Last Round | Game History -->
         <nav class="navigation">
             <div class="nav-container">
-                <button class="nav-btn active" data-page="setup">Game Setup</button>
-                <button class="nav-btn" data-page="dashboard">Live Dashboard</button>
-                <button class="nav-btn" data-page="scoreboard">Scoreboard</button>
-                <button class="nav-btn" data-page="rounds">Round Management</button>
-                <button class="nav-btn" data-page="analytics">Analytics</button>
+                <button class="nav-btn" id="restartGameBtn" data-page="setup">Restart Game</button>
+                <button class="nav-btn" id="undoLastBtn">Undo Last Round</button>
                 <button class="nav-btn" data-page="history">Game History</button>
             </div>
         </nav>
@@ -37,7 +33,7 @@
                         <label for="playerCount">Number of Players (2-20):</label>
                         <input type="number" id="playerCount" min="2" max="20" value="4">
                     </div>
-                    
+
                     <div class="game-config">
                         <h3>Game Configuration</h3>
                         <div class="config-grid">
@@ -55,7 +51,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div id="playerNames" class="player-names">
                         <!-- Player name inputs will be generated here -->
                     </div>
@@ -64,8 +60,9 @@
             </div>
         </section>
 
-        <!-- Live Dashboard Page -->
-        <section id="dashboard" class="page">
+        <!-- Game Page: dashboard strip + scoreboard OR round entry -->
+        <section id="game" class="page">
+            <!-- Live dashboard strip (always visible when game page is shown) -->
             <div class="card round-progress">
                 <h3>Round Progress</h3>
                 <div class="progress-info">
@@ -81,116 +78,90 @@
                     <div id="roundProgress" class="progress-fill"></div>
                 </div>
             </div>
-
             <div class="card quick-actions">
-                <h3>Quick Actions</h3>
                 <div class="action-buttons">
-                    <button id="newGame" class="btn btn-secondary">New Game</button>
+                    <button id="newGame" class="btn btn-secondary">Restart Game</button>
                     <button id="undoLast" class="btn btn-warning">Undo Last Round</button>
                 </div>
             </div>
-        </section>
 
-        <!-- Scoreboard Page -->
-        <section id="scoreboard" class="page">
-            <div class="card scoreboard">
-                <h3>Live Scoreboard</h3>
-                
-                <!-- Threshold Selector -->
-                <div class="threshold-selector">
-                    <div class="threshold-controls">
-                        <div class="threshold-group">
-                            <label for="topThreshold">Top Players:</label>
-                            <input type="number" id="topThreshold" min="1" max="20" value="3" class="threshold-input">
+            <!-- Scoreboard block (shown after each round) -->
+            <div id="gameScoreboardBlock" class="game-block" style="display: none;">
+                <div class="card scoreboard">
+                    <h3>Live Scoreboard</h3>
+                    <div class="threshold-selector">
+                        <div class="threshold-controls">
+                            <div class="threshold-group">
+                                <label for="topThreshold">Top Players:</label>
+                                <input type="number" id="topThreshold" min="1" max="20" value="3" class="threshold-input">
+                            </div>
+                            <div class="threshold-group">
+                                <label for="bottomThreshold">Bottom Players:</label>
+                                <input type="number" id="bottomThreshold" min="1" max="20" value="3" class="threshold-input">
+                            </div>
+                            <button id="updateThresholds" class="btn btn-primary">Update Display</button>
                         </div>
-                        <div class="threshold-group">
-                            <label for="bottomThreshold">Bottom Players:</label>
-                            <input type="number" id="bottomThreshold" min="1" max="20" value="3" class="threshold-input">
+                    </div>
+                    <div class="scoreboard-grid">
+                        <div class="top-players">
+                            <h4>Top <span id="topThresholdDisplay">3</span> Players</h4>
+                            <div id="topPlayers" class="player-list"></div>
                         </div>
-                        <button id="updateThresholds" class="btn btn-primary">Update Display</button>
+                        <div class="bottom-players">
+                            <h4>Bottom <span id="bottomThresholdDisplay">3</span> Players</h4>
+                            <div id="bottomPlayers" class="player-list"></div>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="scoreboard-grid">
-                    <div class="top-players">
-                        <h4>🏆 Top <span id="topThresholdDisplay">3</span> Players</h4>
-                        <div id="topPlayers" class="player-list"></div>
+                    <div class="full-rankings">
+                        <h4>Full Rankings</h4>
+                        <div id="fullRankings" class="rankings-table"></div>
                     </div>
-                    <div class="bottom-players">
-                        <h4>📉 Bottom <span id="bottomThresholdDisplay">3</span> Players</h4>
-                        <div id="bottomPlayers" class="player-list"></div>
-                    </div>
-                </div>
-                <div class="full-rankings">
-                    <h4>📊 Full Rankings</h4>
-                    <div id="fullRankings" class="rankings-table"></div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Round Management Page -->
-        <section id="rounds" class="page">
-            <!-- Bet Phase -->
-            <div class="card bet-phase" id="betPhase">
-                <h3>Round <span id="roundInputNumber">1</span> - Betting Phase</h3>
-                <p class="phase-description">Enter each player's bet for this round.</p>
-                <div id="betInputForm" class="bet-form">
-                    <!-- Bet input form will be generated here -->
-                </div>
-                <div class="round-actions">
-                    <button id="submitBets" class="btn btn-success">Submit Bets</button>
-                </div>
-            </div>
-
-            <!-- Trick Phase -->
-            <div class="card trick-phase" id="trickPhase" style="display: none;">
-                <h3>Round <span id="trickRoundNumber">1</span> - Trick Playing Phase</h3>
-                <div class="trick-progress">
-                    <p>Trick <span id="currentTrick">1</span> of <span id="totalTricks">10</span></p>
-                    <div class="trick-progress-bar">
-                        <div id="trickProgressFill" class="trick-progress-fill"></div>
-                    </div>
-                </div>
-                
-                <div class="trick-selection">
-                    <label for="trickWinner">Who won this trick?</label>
-                    <select id="trickWinner" class="trick-winner-select">
-                        <option value="">Select winner...</option>
-                    </select>
-                    <button id="submitTrickWinner" class="btn btn-primary">Submit Trick Winner</button>
-                </div>
-                
-                <div class="trick-actions">
-                    <button id="undoLastTrick" class="btn btn-warning">Undo Last Trick</button>
-                </div>
-                
-                <div class="trick-history">
-                    <h4>Trick History</h4>
-                    <div id="trickHistory" class="trick-history-list">
-                        <!-- Trick history will be displayed here -->
+                    <div class="round-actions" style="margin-top: 16px;">
+                        <button id="nextRoundBtn" class="btn btn-success">Next Round</button>
                     </div>
                 </div>
             </div>
 
-            <div class="card round-summary">
-                <h3>Round Summary</h3>
-                <div id="roundSummary" class="summary-content">
-                    <!-- Round summary will be displayed here -->
+            <!-- Round entry block (bets + tricks + summary) -->
+            <div id="gameRoundEntryBlock" class="game-block">
+                <div class="card bet-phase" id="betPhase">
+                    <h3>Round <span id="roundInputNumber">1</span> - Betting Phase</h3>
+                    <p class="phase-description">Enter each player's bet for this round.</p>
+                    <div id="betInputForm" class="bet-form">
+                        <!-- Bet input form will be generated here -->
+                    </div>
+                    <div class="round-actions">
+                        <button id="submitBets" class="btn btn-success">Submit Bets</button>
+                    </div>
                 </div>
-            </div>
-        </section>
 
-        <!-- Analytics Page -->
-        <section id="analytics" class="page">
-            <div class="card chart-container">
-                <h3>Score Progression</h3>
-                <canvas id="scoreChart" width="400" height="200"></canvas>
-            </div>
+                <div class="card trick-phase" id="trickPhase" style="display: none;">
+                    <h3>Round <span id="trickRoundNumber">1</span> - Trick Playing Phase</h3>
+                    <div class="trick-progress">
+                        <p>Trick <span id="currentTrick">1</span> of <span id="totalTricks">10</span></p>
+                        <div class="trick-progress-bar">
+                            <div id="trickProgressFill" class="trick-progress-fill"></div>
+                        </div>
+                    </div>
+                    <div class="trick-selection">
+                        <label for="trickWinner">Who won this trick?</label>
+                        <select id="trickWinner" class="trick-winner-select">
+                            <option value="">Select winner...</option>
+                        </select>
+                        <button id="submitTrickWinner" class="btn btn-primary">Submit Trick Winner</button>
+                    </div>
+                    <div class="trick-actions">
+                        <button id="undoLastTrick" class="btn btn-warning">Undo Last Trick</button>
+                    </div>
+                    <div class="trick-history">
+                        <h4>Trick History</h4>
+                        <div id="trickHistory" class="trick-history-list"></div>
+                    </div>
+                </div>
 
-            <div class="card probability">
-                <h3>Win Probability</h3>
-                <div id="winProbability" class="probability-content">
-                    <!-- Win probability calculations will be displayed here -->
+                <div class="card round-summary">
+                    <h3>Round Summary</h3>
+                    <div id="roundSummary" class="summary-content"></div>
                 </div>
             </div>
         </section>
@@ -199,9 +170,7 @@
         <section id="history" class="page">
             <div class="card game-history">
                 <h3>Game History</h3>
-                <div id="gameHistory" class="history-content">
-                    <!-- Game history will be displayed here -->
-                </div>
+                <div id="gameHistory" class="history-content"></div>
             </div>
         </section>
 
@@ -217,4 +186,4 @@
 
     <script src="script.js"></script>
 </body>
-</html> 
+</html>

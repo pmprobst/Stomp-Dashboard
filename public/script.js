@@ -22,11 +22,13 @@ let gameState = {
     }
 };
 
-let scoreChart = null;
 let displayThresholds = {
     top: 3,
     bottom: 3
 };
+
+// When true, game page shows scoreboard block; when false, shows round entry block
+let showingScoreboardAfterRound = false;
 
 // DOM elements
 const playerCountInput = document.getElementById('playerCount');
@@ -49,8 +51,10 @@ const submitBetsBtn = document.getElementById('submitBets');
 const undoLastBtn = document.getElementById('undoLast');
 const newGameBtn = document.getElementById('newGame');
 const roundSummaryContainer = document.getElementById('roundSummary');
-const winProbabilityContainer = document.getElementById('winProbability');
 const gameHistoryContainer = document.getElementById('gameHistory');
+const gameScoreboardBlock = document.getElementById('gameScoreboardBlock');
+const gameRoundEntryBlock = document.getElementById('gameRoundEntryBlock');
+const nextRoundBtn = document.getElementById('nextRoundBtn');
 const errorModal = document.getElementById('errorModal');
 const errorMessage = document.getElementById('errorMessage');
 
@@ -76,6 +80,7 @@ const trickHistoryContainer = document.getElementById('trickHistory');
 // Navigation elements
 const navButtons = document.querySelectorAll('.nav-btn');
 const pages = document.querySelectorAll('.page');
+const undoLastBtnNav = document.getElementById('undoLastBtn');
 
 // Event listeners
 playerCountInput.addEventListener('change', generatePlayerNameInputs);
@@ -84,14 +89,16 @@ submitBetsBtn.addEventListener('click', submitBets);
 submitTrickWinnerBtn.addEventListener('click', submitTrickWinner);
 undoLastTrickBtn.addEventListener('click', undoLastTrick);
 undoLastBtn.addEventListener('click', undoLastAction);
+if (undoLastBtnNav) undoLastBtnNav.addEventListener('click', undoLastAction);
 newGameBtn.addEventListener('click', newGame);
 updateThresholdsBtn.addEventListener('click', updateThresholds);
+nextRoundBtn.addEventListener('click', showNextRound);
 
-// Navigation event listeners
+// Navigation: only Restart Game and Game History have data-page; Undo Last Round is action-only
 navButtons.forEach(btn => {
     btn.addEventListener('click', () => {
         const targetPage = btn.getAttribute('data-page');
-        navigateToPage(targetPage);
+        if (targetPage) navigateToPage(targetPage);
     });
 });
 
@@ -116,31 +123,44 @@ socket.on('validationError', (message) => {
     showError(message);
 });
 
+socket.on('roundCompleted', () => {
+    showingScoreboardAfterRound = true;
+    if (document.querySelector('.page.active').id === 'game') {
+        gameScoreboardBlock.style.display = 'block';
+        gameRoundEntryBlock.style.display = 'none';
+        updateScoreboard();
+    }
+});
+
+socket.on('gameCompleted', () => {
+    showingScoreboardAfterRound = true;
+    if (document.querySelector('.page.active').id === 'game') {
+        gameScoreboardBlock.style.display = 'block';
+        gameRoundEntryBlock.style.display = 'none';
+        updateScoreboard();
+    }
+});
+
 // Initialize the app
 document.addEventListener('DOMContentLoaded', () => {
     generatePlayerNameInputs();
     updateUI();
 });
 
-// Navigation function
+// Navigation function (pages: setup, game, history)
 function navigateToPage(pageId) {
-    // Update navigation buttons
     navButtons.forEach(btn => {
         btn.classList.remove('active');
         if (btn.getAttribute('data-page') === pageId) {
             btn.classList.add('active');
         }
     });
-
-    // Update page visibility
     pages.forEach(page => {
         page.classList.remove('active');
         if (page.id === pageId) {
             page.classList.add('active');
         }
     });
-
-    // Update specific page content
     updatePageContent(pageId);
 }
 
@@ -148,20 +168,15 @@ function navigateToPage(pageId) {
 function updatePageContent(pageId) {
     switch (pageId) {
         case 'setup':
-            // Setup page doesn't need special updates
             break;
-        case 'dashboard':
+        case 'game':
             updateRoundProgress();
-            break;
-        case 'scoreboard':
-            updateScoreboard();
-            break;
-        case 'rounds':
-            updateRoundManagement();
-            break;
-        case 'analytics':
-            updateScoreChart();
-            updateWinProbability();
+            if (showingScoreboardAfterRound) {
+                updateScoreboard();
+            } else {
+                updateRoundManagement();
+                updateRoundSummary();
+            }
             break;
         case 'history':
             updateGameHistory();
@@ -318,42 +333,48 @@ function newGame() {
     navigateToPage('setup');
 }
 
+// Switch from scoreboard view back to round entry (Next Round)
+function showNextRound() {
+    showingScoreboardAfterRound = false;
+    gameScoreboardBlock.style.display = 'none';
+    gameRoundEntryBlock.style.display = 'block';
+    updateRoundManagement();
+    updateRoundSummary();
+}
+
 // Update the UI based on current game state
 function updateUI() {
     if (gameState.gameStarted) {
-        // Enable all navigation buttons except setup
         navButtons.forEach(btn => {
-            const pageId = btn.getAttribute('data-page');
-            if (pageId !== 'setup') {
-                btn.disabled = false;
-                btn.style.opacity = '1';
-            }
+            btn.disabled = false;
+            btn.style.opacity = '1';
         });
-        
-        // After starting a game, if we are still on the setup page, navigate to the rounds page
         if (document.querySelector('.page.active').id === 'setup') {
-            navigateToPage('rounds');
+            showingScoreboardAfterRound = false;
+            navigateToPage('game');
+            gameScoreboardBlock.style.display = 'none';
+            gameRoundEntryBlock.style.display = 'block';
         }
-        
-        // Update all pages
         updateRoundProgress();
         updateScoreboard();
         updateRoundManagement();
         updateRoundSummary();
-        updateScoreChart();
-        updateWinProbability();
         updateGameHistory();
-    } else {
-        // Disable navigation buttons except setup
-        navButtons.forEach(btn => {
-            const pageId = btn.getAttribute('data-page');
-            if (pageId !== 'setup') {
-                btn.disabled = true;
-                btn.style.opacity = '0.5';
+        if (document.querySelector('.page.active').id === 'game') {
+            if (showingScoreboardAfterRound) {
+                gameScoreboardBlock.style.display = 'block';
+                gameRoundEntryBlock.style.display = 'none';
+            } else {
+                gameScoreboardBlock.style.display = 'none';
+                gameRoundEntryBlock.style.display = 'block';
             }
+        }
+    } else {
+        navButtons.forEach(btn => {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
         });
-        
-        // Navigate to setup page if not already there
+        showingScoreboardAfterRound = false;
         if (document.querySelector('.page.active').id !== 'setup') {
             navigateToPage('setup');
         }
@@ -551,120 +572,10 @@ function updateRoundSummary() {
     roundSummaryContainer.innerHTML = summaryHTML;
 }
 
-// Update score progression chart
-function updateScoreChart() {
-    const ctx = document.getElementById('scoreChart').getContext('2d');
-    
-    if (scoreChart) {
-        scoreChart.destroy();
-    }
-    
-    const labels = ['Start'];
-    const datasets = gameState.players.map((player, index) => {
-        const data = [0];
-        gameState.roundData.forEach(round => {
-            data.push(round.scores[index].score);
-        });
-        
-        // Generate random colors for each player
-        const hue = (index * 137.508) % 360;
-        const color = `hsl(${hue}, 70%, 60%)`;
-        
-        return {
-            label: player.name,
-            data: data,
-            borderColor: color,
-            backgroundColor: color + '20',
-            borderWidth: 2,
-            fill: false,
-            tension: 0.4
-        };
-    });
-    
-    // Add round labels
-    gameState.roundData.forEach(round => {
-        labels.push(`Round ${round.round}`);
-    });
-    
-    scoreChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: datasets
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'top',
-                },
-                title: {
-                    display: true,
-                    text: 'Score Progression'
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Score'
-                    }
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Round'
-                    }
-                }
-            }
-        }
-    });
-}
-
-// Update win probability
-function updateWinProbability() {
-    if (gameState.players.length === 0) {
-        winProbabilityContainer.innerHTML = '<p>No players in game.</p>';
-        return;
-    }
-    
-    const sortedPlayers = [...gameState.players].sort((a, b) => b.score - a.score);
-    const remainingRounds = gameState.totalRounds - gameState.currentRound + 1;
-    const maxPossibleScore = remainingRounds * 100; // Maximum possible score per round
-    
-    let probabilityHTML = '<div class="probability-content">';
-    
-    sortedPlayers.forEach((player, index) => {
-        const currentRank = index + 1;
-        const pointsToTop = index >= displayThresholds.top ? sortedPlayers[displayThresholds.top - 1].score - player.score : 0;
-        const maxPossibleGain = remainingRounds * maxPossibleScore;
-        
-        let probability = 0;
-        if (currentRank <= displayThresholds.top) {
-            probability = 100 - (currentRank - 1) * (100 / displayThresholds.top); // Top players have high probability
-        } else if (pointsToTop <= maxPossibleGain) {
-            probability = Math.max(10, 50 - (currentRank - displayThresholds.top) * 10); // Possible to reach top
-        } else {
-            probability = 5; // Very unlikely
-        }
-        
-        probabilityHTML += `
-            <div class="probability-item">
-                <span>${player.name} (Rank ${currentRank})</span>
-                <span class="probability-percentage">${Math.round(probability)}%</span>
-            </div>
-        `;
-    });
-    
-    probabilityHTML += '</div>';
-    winProbabilityContainer.innerHTML = probabilityHTML;
-}
-
 // Update game history
 function updateGameHistory() {
-    if (gameState.roundData.length === 0) {
+    if (!gameHistoryContainer) return;
+    if (gameState.roundData.length === 0 || !gameState.players.length) {
         gameHistoryContainer.innerHTML = '<p>No game history available yet.</p>';
         return;
     }

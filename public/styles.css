@@ -80,6 +80,11 @@ body {
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
 
+.nav-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
 /* Pages */
 .page {
     display: none;
@@ -594,35 +599,13 @@ body {
     border-bottom: none;
 }
 
-/* Chart Container */
-.chart-container {
-    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+/* Game page: scoreboard and round-entry blocks (visibility toggled in JS) */
+.game-block {
+    margin-bottom: 20px;
 }
 
-.chart-container canvas {
-    max-width: 100%;
-    height: auto;
-}
-
-/* Probability */
-.probability-content {
-    display: grid;
-    gap: 12px;
-}
-
-.probability-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-    background: #f7fafc;
-    border-radius: 8px;
-    border-left: 4px solid #667eea;
-}
-
-.probability-percentage {
-    font-weight: 600;
-    color: #2d3748;
+.game-block .card:last-child {
+    margin-bottom: 0;
 }
 
 /* Game History */
